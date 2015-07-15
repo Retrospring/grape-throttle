@@ -31,12 +31,50 @@ module Grape
         begin
           redis.ping
           current = redis.get(rate_key).to_i
+
+          # X-Throttle-Remaining: int RemainingRequests
+          if !options[:remaining_header].nil?
+            header_key = if options[:remaining_header].is_a? String
+              options[:remaining_header]
+            else
+              "X-Throttle-Remaining"
+            end
+
+            header header_key, [0, limit - current].max
+          end
+
+          # X-Throttle-Limit: int MaxRequests
+          if !options[:limit_header].nil?
+            header_key = if options[:limit_header].is_a? String
+              options[:limit_header]
+            else
+              "X-Throttle-Limit"
+            end
+
+            header header_key, limit
+          end
+
+          # X-Throttle-Reset: int Epoch
+          if !options[:expires_header].nil?
+            header_key = if options[:expires_header].is_a? String
+              options[:expires_header]
+            else
+              "X-Throttle-Reset"
+            end
+
+            header header_key, Time.now + redis.ttl(rate_key).to_i
+          end
+
           if !current.nil? && current >= limit
             endpoint.error!("too many requests, please try again later", 403)
           else
             redis.multi do
               redis.incr(rate_key)
-              redis.expire(rate_key, period.to_i)
+
+              # Push expiry forward in slots, not every request.
+              if options[:coast_expiry].nil? or !options[:coast_expiry] or current.nil? or current == 0
+                redis.expire(rate_key, period.to_i)
+              end
             end
           end
 
