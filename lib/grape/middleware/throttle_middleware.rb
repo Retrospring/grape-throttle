@@ -6,6 +6,10 @@ module Grape
         logger   = options[:logger] || Logger.new(STDOUT)
         return unless throttle_options = endpoint.route_setting(:throttle)
 
+        if endpoint.header.nil?
+          endpoint.instance_variable_set :@header, {}
+        end
+
         if limit = throttle_options[:hourly]
           period = 1.hour
         elsif limit = throttle_options[:daily]
