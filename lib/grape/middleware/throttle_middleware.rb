@@ -40,7 +40,7 @@ module Grape
               "X-Throttle-Remaining"
             end
 
-            header header_key, [0, limit - current].max
+            endpoint.header header_key, [0, limit - current].max
           end
 
           # X-Throttle-Limit: int MaxRequests
@@ -51,7 +51,7 @@ module Grape
               "X-Throttle-Limit"
             end
 
-            header header_key, limit
+            endpoint.header header_key, limit
           end
 
           # X-Throttle-Reset: int Epoch
@@ -67,7 +67,7 @@ module Grape
               ttl = period.to_i
             end
 
-            header header_key, Time.now + ttl
+            endpoint.header header_key, Time.now + ttl
           end
 
           if env["REQUEST_METHOD"] != "HEAD"
