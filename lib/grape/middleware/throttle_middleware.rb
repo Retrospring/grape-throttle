@@ -65,15 +65,17 @@ module Grape
             header header_key, Time.now + redis.ttl(rate_key).to_i
           end
 
-          if !current.nil? && current >= limit
-            endpoint.error!("too many requests, please try again later", 403)
-          else
-            redis.multi do
-              redis.incr(rate_key)
+          if env["REQUEST_METHOD"] != "HEAD"
+            if !current.nil? && current >= limit
+              endpoint.error!("too many requests, please try again later", 403)
+            else
+              redis.multi do
+                redis.incr(rate_key)
 
-              # Push expiry forward in slots, not every request.
-              if options[:coast_expiry].nil? or !options[:coast_expiry] or current.nil? or current == 0
-                redis.expire(rate_key, period.to_i)
+                # Push expiry forward in slots, not every request.
+                if options[:coast_expiry].nil? or !options[:coast_expiry] or current.nil? or current == 0
+                  redis.expire(rate_key, period.to_i)
+                end
               end
             end
           end
