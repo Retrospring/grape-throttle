@@ -62,7 +62,12 @@ module Grape
               "X-Throttle-Reset"
             end
 
-            header header_key, Time.now + redis.ttl(rate_key).to_i
+            ttl = redis.ttl(rate_key).to_i
+            if ttl < 0 # -2 = expired, -1 = no TTL
+              ttl = period.to_i
+            end
+
+            header header_key, Time.now + ttl
           end
 
           if env["REQUEST_METHOD"] != "HEAD"
