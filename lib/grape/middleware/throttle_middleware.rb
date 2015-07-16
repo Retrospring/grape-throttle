@@ -127,7 +127,7 @@ module Grape
 
           if env["REQUEST_METHOD"] != "HEAD"
             if !current.nil? && current >= limit
-              endpoint.error!("too many requests, please try again later", 403, generate_headers(current, limit, period, redis, rate_key))
+              endpoint.error!("The API #{r.route_method} #{r.route_path} only allows for #{limit} requests per #{period.to_s}", 429, generate_headers(current, limit, period, redis, rate_key))
             else
               redis.multi do
                 redis.incr(rate_key)
