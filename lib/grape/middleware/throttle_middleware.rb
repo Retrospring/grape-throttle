@@ -77,7 +77,14 @@ module Grape
           redis.ping
           current = redis.get(rate_key).to_i
 
-          @app_response[1].merge! generate_headers current, limit, period, redis, rate_key
+          if @app_response.is_a? Array and @app_response[1].is_a? Hash
+            @app_response[1].merge! generate_headers current, limit, period, redis, rate_key
+          else
+            headers = generate_headers
+            headers.each do |k, v|
+              @app_response.headers[k] = v
+            end
+          end
 
         rescue Exception => e
           logger.warn(e.message)
